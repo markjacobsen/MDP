@@ -33,5 +33,14 @@ This is the actual SQLite database that is used for everything. It will be creat
 ### Extractors
 These are simple utilities that make it easy to run a query or pull a file from somewhere and create a (CSV) file which then gets fed into the Loaders.
 
+- [Azure SQL DB](MDPextractAzureSqlDB/README.md)
+- [Dataverse](MDPextractDataverse/README.md)
+- [DB2](MDPextractDB2/README.md)
+- [SQLite](MDPextractSQLite/README.md)
+
 ### Loaders
 More simple utilities the make it easy to load tables from CSV, txt, etc
+
+- [CSV](MDPloadCSV/README.md)
+- [Log](MDPloadLog/README.md)
+
