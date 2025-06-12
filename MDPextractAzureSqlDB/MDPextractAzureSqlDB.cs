@@ -5,7 +5,7 @@ using System.Text;
 using Azure.Core;
 using Azure.Identity;
 
-class MDPextractSQLserver
+class MDPextractAzureSqlDB
 {
     private readonly string runGuid = Guid.NewGuid().ToString();
 
@@ -13,7 +13,7 @@ class MDPextractSQLserver
     {
         if (args.Length != 3)
         {
-            MDPLib.Log("Usage: MDPextractSQLserver <path-to-sql-files> <sql-files> <connKey>");
+            MDPLib.Log("Usage: MDPextractAzureSqlDB <path-to-sql-files> <sql-files> <connKey>");
             return;
         }
 
@@ -21,7 +21,7 @@ class MDPextractSQLserver
         string[] sqlFiles = args[1].Split(",");
         string connKey = args[2];
 
-        MDPextractSQLserver app = new MDPextractSQLserver();
+        MDPextractAzureSqlDB app = new MDPextractAzureSqlDB();
         app.Extract(sqlDir, sqlFiles, connKey);
     }
 
