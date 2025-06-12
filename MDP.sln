@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPLib", "MDPLib\MDPLib.csproj", "{A3181046-5C2B-4D67-8C9E-15DA8700E985}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPloadCSV", "MDPloadCSV\MDPloadCSV.csproj", "{31FDBA86-8BCD-4C56-938D-52A8F32096B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPloadLog", "MDPloadLog\MDPloadLog.csproj", "{8DC02B67-34B8-4353-AED5-D3B9EE21B179}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractSQLserver", "MDPextractSQLserver\MDPextractSQLserver.csproj", "{41685DFA-2F44-4C25-9091-6CEF2B975D56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractSqlite", "MDPextractSqlite\MDPextractSqlite.csproj", "{CEA2A895-D697-4F78-BC7D-B39780927DEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractDB2", "MDPextractDB2\MDPextractDB2.csproj", "{C692D1DB-49BD-4D35-A0B0-C9815C255653}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractDataverse", "MDPextractDataverse\MDPextractDataverse.csproj", "{CD892499-275C-4536-9B9A-5F98A6DD8298}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A3181046-5C2B-4D67-8C9E-15DA8700E985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3181046-5C2B-4D67-8C9E-15DA8700E985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3181046-5C2B-4D67-8C9E-15DA8700E985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3181046-5C2B-4D67-8C9E-15DA8700E985}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31FDBA86-8BCD-4C56-938D-52A8F32096B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31FDBA86-8BCD-4C56-938D-52A8F32096B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31FDBA86-8BCD-4C56-938D-52A8F32096B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31FDBA86-8BCD-4C56-938D-52A8F32096B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DC02B67-34B8-4353-AED5-D3B9EE21B179}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DC02B67-34B8-4353-AED5-D3B9EE21B179}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DC02B67-34B8-4353-AED5-D3B9EE21B179}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DC02B67-34B8-4353-AED5-D3B9EE21B179}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41685DFA-2F44-4C25-9091-6CEF2B975D56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41685DFA-2F44-4C25-9091-6CEF2B975D56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41685DFA-2F44-4C25-9091-6CEF2B975D56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41685DFA-2F44-4C25-9091-6CEF2B975D56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEA2A895-D697-4F78-BC7D-B39780927DEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEA2A895-D697-4F78-BC7D-B39780927DEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEA2A895-D697-4F78-BC7D-B39780927DEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEA2A895-D697-4F78-BC7D-B39780927DEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C692D1DB-49BD-4D35-A0B0-C9815C255653}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C692D1DB-49BD-4D35-A0B0-C9815C255653}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C692D1DB-49BD-4D35-A0B0-C9815C255653}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C692D1DB-49BD-4D35-A0B0-C9815C255653}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD892499-275C-4536-9B9A-5F98A6DD8298}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD892499-275C-4536-9B9A-5F98A6DD8298}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD892499-275C-4536-9B9A-5F98A6DD8298}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD892499-275C-4536-9B9A-5F98A6DD8298}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
