@@ -1,0 +1,2 @@
+SELECT  *
+FROM    MDP_LOG

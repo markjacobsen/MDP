@@ -8,7 +8,7 @@ class MDPloadCSV
 {
     private string tableName;
     private string csvFile;
-    private string loadGuid;
+    private readonly string runGuid = Guid.NewGuid().ToString();
 
     static int Main(string[] args)
     {
@@ -26,7 +26,6 @@ class MDPloadCSV
 
     int Load(string file)
     {
-        this.loadGuid = Guid.NewGuid().ToString();
         DateTime? begin = null;
         DateTime? end = null;
         string csvFile = file;
@@ -34,12 +33,12 @@ class MDPloadCSV
 
         if (!File.Exists(csvFile))
         {
-            MDPLib.Log($"CSV file not found: {csvFile}", this.loadGuid);
+            MDPLib.Log($"CSV file not found: {csvFile}", this.runGuid);
             return 1;
         }
         if (!File.Exists(dbPath))
         {
-            MDPLib.Log($"SQLite DB file not found: {dbPath}", this.loadGuid);
+            MDPLib.Log($"SQLite DB file not found: {dbPath}", this.runGuid);
             return 1;
         }
 
@@ -47,15 +46,15 @@ class MDPloadCSV
         string dbName = Path.GetFileName(dbPath);
         tableName = Path.GetFileNameWithoutExtension(csvFile);
 
-        bool lockAquired = Lock(); // Note: This call MUST come AFTER setting tableName
+        bool lockAquired = Lock();
         if (!lockAquired)
         {
-            MDPLib.Log("Terminating because unable to aquire lock", this.loadGuid);
+            MDPLib.Log("Terminating because unable to aquire lock", this.runGuid);
             return 0;
         }
 
         string startMsg = $"Loading {fileName} into table {tableName} in database {dbName}";
-        MDPLib.Log(startMsg, this.loadGuid);
+        MDPLib.Log(startMsg, this.runGuid);
         begin = DateTime.Now;
 
         Stopwatch sw = Stopwatch.StartNew();
@@ -73,7 +72,7 @@ class MDPloadCSV
                 if (headerLine == null)
                 {
                     string msg = "CSV file is empty.";
-                    MDPLib.Log(msg, this.loadGuid);
+                    MDPLib.Log(msg, this.runGuid);
                     return 1;
                 }
                 headers = ParseCsvLine(headerLine).ToArray();
@@ -85,7 +84,7 @@ class MDPloadCSV
         catch (Exception ex)
         {
             string msg = $"Error reading CSV header: {ex.Message}";
-            MDPLib.Log(msg, this.loadGuid);
+            MDPLib.Log(msg, this.runGuid);
             return 1;
         }
 
@@ -101,7 +100,7 @@ class MDPloadCSV
             if (rc != 0)
             {
                 string msg = $"Error creating table: {stdErr}";
-                MDPLib.Log(msg, this.loadGuid);
+                MDPLib.Log(msg, this.runGuid);
                 return 1;
             }
 
@@ -110,7 +109,7 @@ class MDPloadCSV
             //string importCmd = $".mode csv\n.import \"{csvPath.Replace("\"", "\"\"")}\" \"{tableName}\"";
             string absCsvPath = Path.GetFullPath(csvFile).Replace('\\', '/');
             string importCmd = $".timeout 600000\n.mode csv\n.import --skip 1 \"{absCsvPath}\" \"{tableName}\""; // attempt to wait up to 10 minutes to aquire a lock
-            MDPLib.Log($"Running import to {tableName}: \n{importCmd}", this.loadGuid);
+            MDPLib.Log($"Running import to {tableName}: \n{importCmd}", this.runGuid);
             rc = RunSqliteImport(dbPath, importCmd, out stdOut, out stdErr);
             if (rc != 0 || !string.IsNullOrWhiteSpace(stdErr))
             {
@@ -231,7 +230,7 @@ class MDPloadCSV
 
     void LogLoad(string dbPath, string file, string table, string debugMsg, DateTime? begin = null, DateTime? end = null)
     {
-        MDPLib.Log(debugMsg, this.loadGuid, true, true);
+        MDPLib.Log(debugMsg, this.runGuid, true, true);
 
         // Update the connection string as needed
         string connectionString = "Data Source=" + dbPath + ";Version=3;";

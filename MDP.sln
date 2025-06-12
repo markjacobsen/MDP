@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPloadLog", "MDPloadLog\MD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractSQLserver", "MDPextractSQLserver\MDPextractSQLserver.csproj", "{41685DFA-2F44-4C25-9091-6CEF2B975D56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractSqlite", "MDPextractSqlite\MDPextractSqlite.csproj", "{CEA2A895-D697-4F78-BC7D-B39780927DEE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractSQLite", "MDPextractSQLite\MDPextractSQLite.csproj", "{CEA2A895-D697-4F78-BC7D-B39780927DEE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MDPextractDB2", "MDPextractDB2\MDPextractDB2.csproj", "{C692D1DB-49BD-4D35-A0B0-C9815C255653}"
 EndProject
