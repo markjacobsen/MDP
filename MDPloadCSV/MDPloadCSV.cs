@@ -278,7 +278,7 @@ class MDPloadCSV
 
             // Insert the log record
             string insertSql = @"
-                INSERT INTO AUD_LOAD (SRC_X, TABLE_X, DEBUG_X, BEGIN_TS, END_TS)
+                INSERT INTO MDP_LOAD (SRC_X, TABLE_X, DEBUG_X, BEGIN_TS, END_TS)
                 VALUES (@file, @table, @debug, @begin, @end);
             ";
 

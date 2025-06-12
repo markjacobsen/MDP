@@ -40,13 +40,13 @@ public class MDPLib
             {
                 connection.Open();
                 // Create the AUD_LOG table
-                string createTableSql = @"CREATE TABLE IF NOT EXISTS AUD_LOG (SRC_X TEXT, GROUP_C TEXT, LOG_X TEXT, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                string createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOG (SRC_X TEXT, GROUP_C TEXT, LOG_X TEXT, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
                 using (var command = new SQLiteCommand(createTableSql, connection))
                 {
                     command.ExecuteNonQuery();
                 }
 
-                createTableSql = @"CREATE TABLE IF NOT EXISTS AUD_LOAD (SRC_X TEXT, TABLE_X TEXT, DEBUG_X TEXT, BEGIN_TS TIMESTAMP, END_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOAD (SRC_X TEXT, TABLE_X TEXT, DEBUG_X TEXT, BEGIN_TS TIMESTAMP, END_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
                 using (var command = new SQLiteCommand(createTableSql, connection))
                 {
                     command.ExecuteNonQuery();
@@ -92,7 +92,7 @@ public class MDPLib
                     connection.Open();
 
                     // Insert the log record
-                    string insertSql = @"INSERT INTO AUD_LOG (SRC_X, GROUP_C, LOG_X, CREATED_TS) VALUES (@src, @group, @logMsg, @createdTs);";
+                    string insertSql = @"INSERT INTO MDP_LOG (SRC_X, GROUP_C, LOG_X, CREATED_TS) VALUES (@src, @group, @logMsg, @createdTs);";
 
                     using (var insertCmd = new SQLiteCommand(insertSql, connection))
                     {
