@@ -160,7 +160,6 @@ class MDPloadCSV
         }
 
         LogLoad(dbPath, csvFile, tableName, loadResult, begin, end);
-        Unlock();
 
         return success ? 0 : 1;
     }
@@ -225,44 +224,9 @@ class MDPloadCSV
         }
     }
 
-    string GetLockFile()
-    {
-        return Path.Combine(MDPLib.GetAppDir(), "Loading "+tableName + ".lock");
-    }
-
     bool Lock()
     {
-        bool success = true;
-        string lockFile = GetLockFile();
-
-        if (File.Exists(lockFile))
-        {
-            DateTime creationTime = File.GetCreationTime(lockFile);
-            if (creationTime < DateTime.Now.AddMinutes(-10))
-            {
-                MDPLib.Log("The lock file was created more than 10 minutes ago. Deleting: "+lockFile, this.loadGuid);
-                Unlock();
-            }
-            else
-            {
-                success = false;
-            }
-        }
-
-        if (success)
-        {
-            MDPLib.Log("Writing lock file: " + lockFile, this.loadGuid);
-            File.AppendAllText(lockFile, csvFile);
-        }
-
-        return success;
-    }
-
-    void Unlock()
-    {
-        string lockFile = GetLockFile();
-        MDPLib.Log("Deleting lock file: " + lockFile, this.loadGuid);
-        File.Delete(lockFile);
+        return !MDPLib.IsMDPlocked(MDPLib.GetAppName(), 5);
     }
 
     void LogLoad(string dbPath, string file, string table, string debugMsg, DateTime? begin = null, DateTime? end = null)

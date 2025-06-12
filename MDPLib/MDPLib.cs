@@ -5,7 +5,7 @@ namespace CFG2.MDP;
 
 public class MDPLib
 {
-    static string GetAppName()
+    public static string GetAppName()
     {
         return Process.GetCurrentProcess().ProcessName;
     }
@@ -33,7 +33,7 @@ public class MDPLib
 
     public static string GetLogFile()
     {
-        return Path.Combine(GetLogDir(), GetAppName()+".log");
+        return Path.Combine(GetLogDir(), GetAppName() + ".log");
     }
 
     public static string GetMDP()
@@ -54,6 +54,12 @@ public class MDPLib
                 }
 
                 createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOAD (SRC_X TEXT, TABLE_X TEXT, DEBUG_X TEXT, BEGIN_TS TIMESTAMP, END_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                using (var command = new SQLiteCommand(createTableSql, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_MISC_VALUE (VALUE_C TEXT PRIMARY KEY, VALUE_X TEXT, VALUE_NB NUMERIC, VALUE_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP, MODIFIED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
                 using (var command = new SQLiteCommand(createTableSql, connection))
                 {
                     command.ExecuteNonQuery();
@@ -114,5 +120,69 @@ public class MDPLib
             }
             catch { /* Ignore to not block main process */ }
         }
+    }
+
+    public static bool IsMDPlocked(string name, int timeoutInMinutes = 5)
+    {
+        DateTime start = DateTime.Now;
+        while (!SaveMiscValue("MDP_LOCK", "Locked By: " + name, null, DateTime.Now))
+        {
+            TimeSpan difference = DateTime.Now - start;
+            if (difference.TotalMinutes >= timeoutInMinutes)
+            {
+                Log("MDP is locked by another process. Timeout reached.");
+                return true;
+            }
+            else
+            {
+                Log("MDP is locked by another process. Waiting for 30 seconds before retrying...");
+            }
+            Thread.Sleep(30000);
+        }
+        return false;
+    }
+
+    public static bool SaveMiscValue(string code, string valString, double? number = null, DateTime? timestamp = null)
+    {
+        bool success = false;
+        try
+        {
+            string dbPath = GetMDP();
+            string connectionString = "Data Source=" + dbPath + ";Version=3;";
+
+            using (var connection = new SQLiteConnection(connectionString))
+            {
+                connection.Open();
+
+                // Insert or update the misc value
+                string upsertSql = @"
+                    INSERT INTO MDP_MISC_VALUE (VALUE_C, VALUE_X, VALUE_NB, VALUE_TS)
+                    VALUES (@code, @valString, @number, @timestamp)
+                    ON CONFLICT(VALUE_C) DO UPDATE SET
+                        VALUE_X = @valString,
+                        VALUE_NB = @number,
+                        VALUE_TS = @timestamp,
+                        MODIFIED_TS = CURRENT_TIMESTAMP;";
+
+                using (var command = new SQLiteCommand(upsertSql, connection))
+                {
+                    command.Parameters.AddWithValue("@code", code);
+                    command.Parameters.AddWithValue("@valString", valString);
+                    command.Parameters.AddWithValue("@number", number.HasValue ? (object)number.Value : DBNull.Value);
+                    command.Parameters.AddWithValue("@timestamp", timestamp.HasValue ? (object)timestamp.Value : DBNull.Value);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+
+            success = true;
+        }
+        catch (Exception ex)
+        {
+            Log("Failed to save misc value: " + code + ": "+ex.Message);
+            success = false;
+        }
+        
+        return success;
     }
 }
