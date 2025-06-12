@@ -174,7 +174,7 @@ class MDPextractDB2
     
     public static (string host, string port, string db) GetConnection(string connection)
     {
-        string propertiesFilePath = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\MDP\db.properties");
+        string propertiesFilePath = MDPLib.GetConnFile();
         string host = null, port = null, db = null;
 
         foreach (var line in File.ReadLines(propertiesFilePath))

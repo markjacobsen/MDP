@@ -1,10 +1,16 @@
 ﻿using System.Data.SQLite;
 using System.Diagnostics;
+using System.Net.NetworkInformation;
 
 namespace CFG2.MDP;
 
 public class MDPLib
 {
+    public static string GetConnFile()
+    {
+        return Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\MDP\db.properties");
+    }
+
     public static string GetAppName()
     {
         return Process.GetCurrentProcess().ProcessName;
