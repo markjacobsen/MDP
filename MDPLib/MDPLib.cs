@@ -12,8 +12,15 @@ public class MDPLib
 
     public static string GetAppDir()
     {
-        string dir = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\" + GetAppName());
+        string dir = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps");
         if (!Directory.Exists(dir)) { Directory.CreateDirectory(dir); }
+
+        dir = Path.Combine(dir, @"CFG2");
+        if (!Directory.Exists(dir)) { Directory.CreateDirectory(dir); }
+
+        dir = Path.Combine(dir, @"MDP");
+        if (!Directory.Exists(dir)) { Directory.CreateDirectory(dir); }
+
         return dir;
     }
 
