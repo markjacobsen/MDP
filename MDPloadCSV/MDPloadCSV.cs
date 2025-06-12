@@ -109,7 +109,7 @@ class MDPloadCSV
             // The .import command expects the first line to be the header
             //string importCmd = $".mode csv\n.import \"{csvPath.Replace("\"", "\"\"")}\" \"{tableName}\"";
             string absCsvPath = Path.GetFullPath(csvFile).Replace('\\', '/');
-            string importCmd = $".timeout 600000\n.mode csv\n.import --skip 1 {absCsvPath} \"{tableName}\""; // attempt to wait up to 10 minutes to aquire a lock
+            string importCmd = $".timeout 600000\n.mode csv\n.import --skip 1 \"{absCsvPath}\" \"{tableName}\""; // attempt to wait up to 10 minutes to aquire a lock
             MDPLib.Log($"Running import to {tableName}: \n{importCmd}", this.loadGuid);
             rc = RunSqliteImport(dbPath, importCmd, out stdOut, out stdErr);
             if (rc != 0 || !string.IsNullOrWhiteSpace(stdErr))
@@ -294,9 +294,4 @@ class MDPloadCSV
             }
         }
     }
-    
-    // =================================
-    // Boilerplate functions
-    // =================================
-    
 }
