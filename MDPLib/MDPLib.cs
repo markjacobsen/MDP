@@ -8,7 +8,25 @@ public class MDPLib
 {
     public static string GetConnFile()
     {
-        return Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\MDP\db.properties");
+        string path = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\MDP\db.properties");
+        if (!File.Exists(path))
+        {
+            // Create a default db.properties file
+            File.WriteAllText(path, "# These are just example entries.\n" +
+                                    "\n" +
+                                    "# Example DB2 LUW\n" +
+                                    "MYDB2.host=host132\n" +
+                                    "MYDB2.port=46000\n" +
+                                    "MYDB2.db=MYDB2\n" +
+                                    "\n" +
+                                    "# Example Dynamics 365 Dataverse\n" +
+                                    "D365D.server=our-d365-dev.crm.dynamics.com\n" +
+                                    "\n" +
+                                    "# Example Azure SQL DB\n" +
+                                    "MYASDB.server=mdb-sql.database.windows.net\n" +
+                                    "MYASDB.db=MY_DB\n");
+        }
+        return path;
     }
 
     public static string GetAppName()
