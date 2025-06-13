@@ -1,7 +1,4 @@
 cd %~dp0
-dotnet build
-
-cd %~dp0
 cd MDPextractAzureSqlDB
 CALL .\build.bat
 
