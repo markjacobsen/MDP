@@ -46,11 +46,11 @@ class MDPloadCSV
         string dbName = Path.GetFileName(dbPath);
         tableName = Path.GetFileNameWithoutExtension(csvFile);
 
-        bool lockAquired = Lock();
+        bool lockAquired = MDPLib.Lock(MDPLib.GetAppName(), 5);
         if (!lockAquired)
         {
             MDPLib.Log("Terminating because unable to aquire lock", this.runGuid);
-            return 0;
+            return 2;
         }
 
         string startMsg = $"Loading {fileName} into table {tableName} in database {dbName}";
@@ -158,6 +158,13 @@ class MDPloadCSV
             File.Move(csvFile, errFile);
         }
 
+        bool lockReleased = MDPLib.Unlock(MDPLib.GetAppName(), 5);
+        if (!lockReleased)
+        {
+            MDPLib.Log("Terminating because unable to release lock", this.runGuid);
+            return 2;
+        }
+
         LogLoad(dbPath, csvFile, tableName, loadResult, begin, end);
 
         return success ? 0 : 1;
@@ -221,11 +228,6 @@ class MDPloadCSV
                 val = val.Substring(1, val.Length - 2).Replace("\"\"", "\"");
             yield return val;
         }
-    }
-
-    bool Lock()
-    {
-        return !MDPLib.IsMDPlocked(MDPLib.GetAppName(), 5);
     }
 
     void LogLoad(string dbPath, string file, string table, string debugMsg, DateTime? begin = null, DateTime? end = null)

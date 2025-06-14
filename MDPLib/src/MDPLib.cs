@@ -12,7 +12,7 @@ public class MDPLib
         if (!File.Exists(path))
         {
             string defaultMDPlocation = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), "MDP.db");
-            
+
             // Create a default db.properties file
             File.WriteAllText(path, "MDP.file=" + defaultMDPlocation + "\n" +
                                     "\n" +
@@ -147,7 +147,7 @@ public class MDPLib
         }
     }
 
-    public static bool IsMDPlocked(string name, int timeoutInMinutes = 5)
+    public static bool Lock(string name, int timeoutInMinutes = 5)
     {
         DateTime start = DateTime.Now;
         while (!SaveMiscValue("MDP_LOCK", "Locked By: " + name, null, DateTime.Now))
@@ -156,7 +156,7 @@ public class MDPLib
             if (difference.TotalMinutes >= timeoutInMinutes)
             {
                 Log("MDP is locked by another process. Timeout reached.");
-                return true;
+                return false;
             }
             else
             {
@@ -164,7 +164,27 @@ public class MDPLib
             }
             Thread.Sleep(30000);
         }
-        return false;
+        return true;
+    }
+
+    public static bool Unlock(string name, int timeoutInMinutes = 5)
+    {
+        DateTime start = DateTime.Now;
+        while (!SaveMiscValue("MDP_LOCK", "Unlocked By: " + name, null, DateTime.Now))
+        {
+            TimeSpan difference = DateTime.Now - start;
+            if (difference.TotalMinutes >= timeoutInMinutes)
+            {
+                Log("MDP is locked by another process. Timeout reached.");
+                return false;
+            }
+            else
+            {
+                Log("MDP is locked by another process. Waiting for 30 seconds before retrying...");
+            }
+            Thread.Sleep(30000);
+        }
+        return true;
     }
 
     public static bool SaveMiscValue(string code, string valString, double? number = null, DateTime? timestamp = null)
