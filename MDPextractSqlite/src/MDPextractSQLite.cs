@@ -78,7 +78,7 @@ class MDPextractSQLite
                     string[] columnNames = Enumerable.Range(0, reader.FieldCount)
                         .Select(reader.GetName)
                         .ToArray();
-                    writer.WriteLine(string.Join(",", columnNames.Select(EscapeCsv)));
+                    writer.WriteLine(string.Join(",", columnNames.Select(MDPLib.EscapeCsvValue)));
 
                     // Write rows
                     while (reader.Read())
@@ -86,7 +86,7 @@ class MDPextractSQLite
                         string[] fields = new string[reader.FieldCount];
                         for (int i = 0; i < reader.FieldCount; i++)
                         {
-                            fields[i] = EscapeCsv(reader[i]?.ToString() ?? "");
+                            fields[i] = MDPLib.EscapeCsvValue(reader[i]?.ToString() ?? "");
                         }
                         writer.WriteLine(string.Join(",", fields));
                         records++;
@@ -102,16 +102,5 @@ class MDPextractSQLite
             MDPLib.Log("Error: " + ex.Message, this.runGuid);
             return 1;
         }
-    }
-
-    // Escapes a value for CSV output
-    static string EscapeCsv(string value)
-    {
-        if (value.Contains("\"") || value.Contains(",") || value.Contains("\n") || value.Contains("\r"))
-        {
-            value = value.Replace("\"", "\"\"");
-            return $"\"{value}\"";
-        }
-        return value;
     }
 }

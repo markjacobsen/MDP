@@ -147,6 +147,39 @@ public class MDPLib
         }
     }
 
+    public static string EscapeCsvValue(string s)
+    {
+        if (string.IsNullOrEmpty(s))
+            return "";
+
+        bool mustQuote = false;
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (c == '"' || c == ',' || c == '\n' || c == '\r')
+            {
+                mustQuote = true;
+                break;
+            }
+        }
+
+        if (!mustQuote)
+            return s;
+
+        // Use StringBuilder for efficiency
+        var sb = new System.Text.StringBuilder();
+        sb.Append('"');
+        foreach (char c in s)
+        {
+            if (c == '"')
+                sb.Append("\"\"");
+            else
+                sb.Append(c);
+        }
+        sb.Append('"');
+        return sb.ToString();
+    }
+
     public static bool Lock(string name, int timeoutInMinutes = 5)
     {
         DateTime start = DateTime.Now;

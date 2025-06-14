@@ -92,7 +92,7 @@ class MDPextractDB2
                         string[] columnNames = new string[reader.FieldCount];
                         for (int i = 0; i < reader.FieldCount; i++)
                             columnNames[i] = reader.GetName(i);
-                        writer.WriteLine(string.Join(",", Array.ConvertAll(columnNames, CsvEscape)));
+                        writer.WriteLine(string.Join(",", Array.ConvertAll(columnNames, MDPLib.EscapeCsvValue)));
 
                         // Write rows
                         MDPLib.Log("Writing results to: " + csvFilePath, this.runGuid);
@@ -105,7 +105,7 @@ class MDPextractDB2
                             {
                                 if (i > 0) sb.Append(',');
                                 object value = reader.GetValue(i);
-                                sb.Append(CsvEscape(value?.ToString()));
+                                sb.Append(MDPLib.EscapeCsvValue(value?.ToString()));
                             }
                             writer.WriteLine(sb.ToString());
                             records++;
@@ -131,44 +131,5 @@ class MDPextractDB2
             }
             MDPLib.Log("ERROR executing on rec "+records+" and extract file deleted: "+ex.Message, this.runGuid, true, true);
         }
-    }
-
-    void AppendToCommandScript(string command, string scriptFile)
-    {
-        File.AppendAllText(scriptFile, "db2 "+command + "\n\n");
-    }
-
-    // Escapes a value for CSV output
-    static string CsvEscape(string s)
-    {
-        if (string.IsNullOrEmpty(s))
-            return "";
-
-        bool mustQuote = false;
-        for (int i = 0; i < s.Length; i++)
-        {
-            char c = s[i];
-            if (c == '"' || c == ',' || c == '\n' || c == '\r')
-            {
-                mustQuote = true;
-                break;
-            }
-        }
-
-        if (!mustQuote)
-            return s;
-
-        // Use StringBuilder for efficiency
-        var sb = new System.Text.StringBuilder();
-        sb.Append('"');
-        foreach (char c in s)
-        {
-            if (c == '"')
-                sb.Append("\"\"");
-            else
-                sb.Append(c);
-        }
-        sb.Append('"');
-        return sb.ToString();
     }
 }
