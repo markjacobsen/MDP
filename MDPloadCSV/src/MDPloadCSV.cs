@@ -6,8 +6,6 @@ using System.Text.RegularExpressions;
 
 class MDPloadCSV
 {
-    private string tableName;
-    private string csvFile;
     private readonly string runGuid = Guid.NewGuid().ToString();
 
     static int Main(string[] args)
@@ -44,7 +42,7 @@ class MDPloadCSV
 
         string fileName = Path.GetFileName(csvFile);
         string dbName = Path.GetFileName(dbPath);
-        tableName = Path.GetFileNameWithoutExtension(csvFile);
+        string tableName = Path.GetFileNameWithoutExtension(csvFile);
 
         bool lockAquired = MDPLib.Lock(MDPLib.GetAppName(), 5);
         if (!lockAquired)
