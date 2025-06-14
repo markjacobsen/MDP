@@ -40,7 +40,7 @@ class MDPextractDB2
         MDPLib.Log("Reading file: " + sqlFilePath, this.runGuid);
 
         // Read file and extract connection info and SQL
-        var (host, port, db) = GetConnection(connKey);
+        var (host, port, db) = MDPLib.GetDB2ConnInfo(connKey);
 
         StringBuilder sqlBuilder = new StringBuilder();
 
@@ -170,27 +170,5 @@ class MDPextractDB2
         }
         sb.Append('"');
         return sb.ToString();
-    }
-    
-    public static (string host, string port, string db) GetConnection(string connection)
-    {
-        string propertiesFilePath = MDPLib.GetConnFile();
-        string host = null, port = null, db = null;
-
-        foreach (var line in File.ReadLines(propertiesFilePath))
-        {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith(connection+".host="))
-                host = trimmed.Substring((connection+".host=").Length).Trim();
-            else if (trimmed.StartsWith(connection+".port="))
-                port = trimmed.Substring((connection+".port=").Length).Trim();
-            else if (trimmed.StartsWith(connection+".db="))
-                db = trimmed.Substring((connection+".db=").Length).Trim();
-        }
-
-        if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(port) || string.IsNullOrEmpty(db))
-            throw new Exception("Missing connection information in db.properties.");
-
-        return (host, port, db);
     }
 }

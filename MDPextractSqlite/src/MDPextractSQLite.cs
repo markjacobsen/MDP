@@ -11,19 +11,21 @@ class MDPextractSQLite
     {
         if (args.Length != 2)
         {
-            MDPLib.Log("Usage: MDPextractSQLite <dbFile> <queryFile>");
+            MDPLib.Log("Usage: MDPextractSQLite <queryFile> <connKey>");
             return 1;
         }
 
-        string dbFile = args[0];
-        string queryFile = args[1];
+        string queryFile = args[0];
+        string connKey = args[1];
 
         MDPextractSQLite extractor = new MDPextractSQLite();
-        return extractor.Extract(dbFile, queryFile);
+        return extractor.Extract(queryFile, connKey);
     }
 
-    int Extract(string dbFile, string queryFile)
+    int Extract(string queryFile, string connKey)
     {
+        string dbFile = MDPLib.GetSQLiteConnInfo(connKey);
+
         // Validate files exist
         if (!File.Exists(dbFile))
         {

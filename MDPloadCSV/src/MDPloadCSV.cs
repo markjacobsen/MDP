@@ -29,7 +29,7 @@ class MDPloadCSV
         DateTime? begin = null;
         DateTime? end = null;
         string csvFile = file;
-        string dbPath = MDPLib.GetMDP();
+        string dbPath = MDPLib.GetSQLiteConnInfo("MDP");
 
         if (!File.Exists(csvFile))
         {

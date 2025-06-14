@@ -6,13 +6,17 @@ namespace CFG2.MDP;
 
 public class MDPLib
 {
-    public static string GetConnFile()
+    private static string GetConnFile()
     {
         string path = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\MDP\db.properties");
         if (!File.Exists(path))
         {
+            string defaultMDPlocation = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), "MDP.db");
+            
             // Create a default db.properties file
-            File.WriteAllText(path, "# These are just example entries.\n" +
+            File.WriteAllText(path, "MDP.file=" + defaultMDPlocation + "\n" +
+                                    "\n" +
+                                    "# The rest are just example entries...\n" +
                                     "\n" +
                                     "# Example DB2 LUW\n" +
                                     "MYDB2.host=host132\n" +
@@ -25,7 +29,37 @@ public class MDPLib
                                     "# Example Azure SQL DB\n" +
                                     "MYASDB.server=mdb-sql.database.windows.net\n" +
                                     "MYASDB.db=MY_DB\n");
+
+
+            if (!File.Exists(defaultMDPlocation))
+            {
+                // Create an empty MDP database if it does not exist
+                SQLiteConnection.CreateFile(defaultMDPlocation);
+                using (var connection = new SQLiteConnection("Data Source=" + defaultMDPlocation + ";Version=3;"))
+                {
+                    connection.Open();
+                    // Create the AUD_LOG table
+                    string createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOG (SRC_X TEXT, GROUP_C TEXT, LOG_X TEXT, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                    using (var command = new SQLiteCommand(createTableSql, connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOAD (SRC_X TEXT, TABLE_X TEXT, DEBUG_X TEXT, BEGIN_TS TIMESTAMP, END_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                    using (var command = new SQLiteCommand(createTableSql, connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_MISC_VALUE (VALUE_C TEXT PRIMARY KEY, VALUE_X TEXT, VALUE_NB NUMERIC, VALUE_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP, MODIFIED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                    using (var command = new SQLiteCommand(createTableSql, connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
         }
+
         return path;
     }
 
@@ -60,39 +94,6 @@ public class MDPLib
         return Path.Combine(GetLogDir(), GetAppName() + ".log");
     }
 
-    public static string GetMDP()
-    {
-        string location = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), "MDP.db");
-        if (!File.Exists(location))
-        {
-            // Create an empty MDP database if it does not exist
-            SQLiteConnection.CreateFile(location);
-            using (var connection = new SQLiteConnection("Data Source=" + location + ";Version=3;"))
-            {
-                connection.Open();
-                // Create the AUD_LOG table
-                string createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOG (SRC_X TEXT, GROUP_C TEXT, LOG_X TEXT, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
-                using (var command = new SQLiteCommand(createTableSql, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
-
-                createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOAD (SRC_X TEXT, TABLE_X TEXT, DEBUG_X TEXT, BEGIN_TS TIMESTAMP, END_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
-                using (var command = new SQLiteCommand(createTableSql, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
-
-                createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_MISC_VALUE (VALUE_C TEXT PRIMARY KEY, VALUE_X TEXT, VALUE_NB NUMERIC, VALUE_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP, MODIFIED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
-                using (var command = new SQLiteCommand(createTableSql, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-        return location;
-    }
-
     public static void Log(string message, string group = null, bool toFile = true, bool toMDP = false)
     {
         string groupPrefix = string.IsNullOrEmpty(group) ? "" : $"[{group}] ";
@@ -121,7 +122,7 @@ public class MDPLib
         {
             try
             {
-                string dbPath = GetMDP();
+                string dbPath = GetSQLiteConnInfo("MDP");
                 string connectionString = "Data Source=" + dbPath + ";Version=3;";
 
                 using (var connection = new SQLiteConnection(connectionString))
@@ -171,7 +172,7 @@ public class MDPLib
         bool success = false;
         try
         {
-            string dbPath = GetMDP();
+            string dbPath = GetSQLiteConnInfo("MDP");
             string connectionString = "Data Source=" + dbPath + ";Version=3;";
 
             using (var connection = new SQLiteConnection(connectionString))
@@ -203,10 +204,90 @@ public class MDPLib
         }
         catch (Exception ex)
         {
-            Log("Failed to save misc value: " + code + ": "+ex.Message);
+            Log("Failed to save misc value: " + code + ": " + ex.Message);
             success = false;
         }
-        
+
         return success;
+    }
+
+    public static string GetSQLiteConnInfo(string connKey)
+    {
+        string propertiesFilePath = GetConnFile();
+        string file = null;
+
+        foreach (var line in File.ReadLines(propertiesFilePath))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith(connKey + ".file="))
+                file = trimmed.Substring((connKey + ".file=").Length).Trim();
+        }
+
+        if (string.IsNullOrEmpty(file))
+            throw new Exception("Missing connection information for " + connKey + " in " + propertiesFilePath);
+
+        return file;
+    }
+
+    public static (string server, string db) GetAzureSqlDBConnInfo(string connKey)
+    {
+        string propertiesFilePath = GetConnFile();
+        string server = null, db = null;
+
+        foreach (var line in File.ReadLines(propertiesFilePath))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith(connKey + ".server="))
+                server = trimmed.Substring((connKey + ".server=").Length).Trim();
+            else if (trimmed.StartsWith(connKey + ".db="))
+                db = trimmed.Substring((connKey + ".db=").Length).Trim();
+        }
+
+        if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(db))
+            throw new Exception("Missing connection information in db.properties.");
+
+        return (server, db);
+    }
+
+    public static string GetDataverseConnInfo(string connKey)
+    {
+        string propertiesFilePath = GetConnFile();
+        string server = null;
+
+        Console.WriteLine("Getting connection for " + connKey + " from " + propertiesFilePath);
+
+        foreach (var line in File.ReadLines(propertiesFilePath))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith(connKey + ".server="))
+                server = trimmed.Substring((connKey + ".server=").Length).Trim();
+        }
+
+        if (string.IsNullOrEmpty(server))
+            throw new Exception("Missing connection information in db.properties.");
+
+        return server;
+    }
+    
+    public static (string host, string port, string db) GetDB2ConnInfo(string connection)
+    {
+        string propertiesFilePath = GetConnFile();
+        string host = null, port = null, db = null;
+
+        foreach (var line in File.ReadLines(propertiesFilePath))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith(connection+".host="))
+                host = trimmed.Substring((connection+".host=").Length).Trim();
+            else if (trimmed.StartsWith(connection+".port="))
+                port = trimmed.Substring((connection+".port=").Length).Trim();
+            else if (trimmed.StartsWith(connection+".db="))
+                db = trimmed.Substring((connection+".db=").Length).Trim();
+        }
+
+        if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(port) || string.IsNullOrEmpty(db))
+            throw new Exception("Missing connection information in db.properties.");
+
+        return (host, port, db);
     }
 }

@@ -35,7 +35,7 @@ class MDPExtractDataverse
         }
 
         // Get server
-        string server = GetConnection(connKey);
+        string server = MDPLib.GetDataverseConnInfo(connKey);
 
         if (string.IsNullOrEmpty(server))
         {
@@ -157,26 +157,5 @@ class MDPExtractDataverse
             MDPLib.Log($"Wrote {records} records to: {csvFile}", this.runGuid, true, true);
         }
         return 0;
-    }
-
-    // Stub for GetConnection
-    static string GetConnection(string connKey)
-    {
-        string propertiesFilePath = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"60 JNL Ref\60.7 - Databases\db.properties");
-        string server = null;
-
-        Console.WriteLine("Getting connection for " + connKey + " from " + propertiesFilePath);
-
-        foreach (var line in File.ReadLines(propertiesFilePath))
-        {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith(connKey + ".server="))
-                server = trimmed.Substring((connKey + ".server=").Length).Trim();
-        }
-
-        if (string.IsNullOrEmpty(server))
-            throw new Exception("Missing connection information in db.properties.");
-
-        return server;
     }
 }

@@ -34,7 +34,7 @@ class MDPextractAzureSqlDB
         }
 
         // Get connection info
-        var (server, database) = GetConnection(connKey);
+        var (server, database) = MDPLib.GetAzureSqlDBConnInfo(connKey);
 
         if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(database))
         {
@@ -133,27 +133,5 @@ class MDPextractAzureSqlDB
         }
 
         MDPLib.Log("Processed "+successfullyProcessed+" of "+sqlFiles.Length+" file(s) successfully in: "+sqlDir, this.runGuid, true, true);
-    }
-
-    // Dummy GetConnection method for demonstration
-    // Replace with your actual logic to retrieve server and database from connKey
-    static (string server, string db) GetConnection(string connKey)
-    {
-        string propertiesFilePath = MDPLib.GetConnFile();
-        string server = null, db = null;
-
-        foreach (var line in File.ReadLines(propertiesFilePath))
-        {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith(connKey+".server="))
-                server = trimmed.Substring((connKey+".server=").Length).Trim();
-            else if (trimmed.StartsWith(connKey+".db="))
-                db = trimmed.Substring((connKey+".db=").Length).Trim();
-        }
-
-        if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(db))
-            throw new Exception("Missing connection information in db.properties.");
-
-        return (server, db);
     }
 }
