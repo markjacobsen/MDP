@@ -19,4 +19,4 @@ dotnet run --project MDPloadCSV "%SYNC_DRIVE_HOME%\Apps\CFG2\MDP\Test\L0_TEST.cs
 
 dotnet run --project MDPloadLog "%SYNC_DRIVE_HOME%\Apps\CFG2\MDP\Test\LogTest.txt"
 
-dotnet run --project MDPextractSQLite "%SYNC_DRIVE_HOME%\Apps\CFG2\MDP\Test\SQLiteExtractTest.sql" "MDP"
+dotnet run --project MDPextractSQLite "MDP" "%SYNC_DRIVE_HOME%\Apps\CFG2\MDP\Test\SQLiteExtractTest.sql"

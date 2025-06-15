@@ -11,12 +11,12 @@ class MDPextractDB2
     {
         if (args.Length != 4)
         {
-            MDPLib.Log("Usage: MDPextractDB2 <path-to-sql-file> <connKey> <username> <password>");
+            MDPLib.Log("Usage: MDPextractDB2 <connKey> <path-to-sql-file> <username> <password>");
             return;
         }
 
-        string sqlFilePath = args[0];
-        string connKey = args[1];
+        string connKey = args[0];
+        string sqlFilePath = args[1];
         string db2Username = args[2];
         string db2Password = args[3];
 

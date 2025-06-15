@@ -11,12 +11,12 @@ class MDPextractSQLite
     {
         if (args.Length != 2)
         {
-            MDPLib.Log("Usage: MDPextractSQLite <queryFile> <connKey>");
+            MDPLib.Log("Usage: MDPextractSQLite <connKey> <queryFile>");
             return 1;
         }
 
-        string queryFile = args[0];
-        string connKey = args[1];
+        string connKey = args[0];
+        string queryFile = args[1];
 
         MDPextractSQLite extractor = new MDPextractSQLite();
         return extractor.Extract(queryFile, connKey);

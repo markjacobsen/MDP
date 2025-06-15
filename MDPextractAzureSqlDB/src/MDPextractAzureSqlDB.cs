@@ -13,13 +13,13 @@ class MDPextractAzureSqlDB
     {
         if (args.Length != 3)
         {
-            MDPLib.Log("Usage: MDPextractAzureSqlDB <path-to-sql-files> <sql-files> <connKey>");
+            MDPLib.Log("Usage: MDPextractAzureSqlDB <connKey> <path-to-sql-files> <sql-files>");
             return;
         }
 
-        string sqlDir = args[0];
-        string[] sqlFiles = args[1].Split(",");
-        string connKey = args[2];
+        string connKey = args[0];
+        string sqlDir = args[1];
+        string[] sqlFiles = args[2].Split(",");
 
         MDPextractAzureSqlDB app = new MDPextractAzureSqlDB();
         app.Extract(sqlDir, sqlFiles, connKey);

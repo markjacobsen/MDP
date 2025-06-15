@@ -12,13 +12,13 @@ class MDPExtractDataverse
     {
         if (args.Length != 3)
         {
-            MDPLib.Log("Usage: MDPExtractDataverse <path-to-dv-files> <dv-files> <connKey>");
+            MDPLib.Log("Usage: MDPExtractDataverse <connKey> <path-to-dv-files> <dv-files>");
             return 1;
         }
 
-        string dvDir = args[0];
-        string[] dvFiles = args[1].Split(",");
-        string connKey = args[2];
+        string connKey = args[0];
+        string dvDir = args[1];
+        string[] dvFiles = args[2].Split(",");
 
         MDPExtractDataverse extractor = new MDPExtractDataverse();
         Task<int> ret = extractor.Extract(dvDir, dvFiles, connKey);
