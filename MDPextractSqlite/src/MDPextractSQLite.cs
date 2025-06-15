@@ -11,6 +11,7 @@ class MDPextractSQLite
     {
         if (args.Length != 3)
         {
+            MDPLib.Log($"ERROR: Incorrect number of arguments: {args.Length}");
             MDPLib.Log("Usage: MDPextractSQLite <connKey> <path-to-sql-files> <sql-files>");
             return 1;
         }

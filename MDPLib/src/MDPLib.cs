@@ -6,15 +6,16 @@ namespace CFG2.MDP;
 
 public class MDPLib
 {
+    private static readonly string defaultMDPfile = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), "MDP.db");
+
     private static string GetConnFile()
     {
         string path = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\MDP\db.properties");
         if (!File.Exists(path))
         {
-            string defaultMDPlocation = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), "MDP.db");
-
             // Create a default db.properties file
-            File.WriteAllText(path, "MDP.file=" + defaultMDPlocation + "\n" +
+            File.WriteAllText(path, "# Do NOT delete the MDP.file entry\n" +
+                                    "MDP.file=" + defaultMDPfile + "\n" +
                                     "\n" +
                                     "# The rest are just example entries...\n" +
                                     "\n" +
@@ -29,38 +30,44 @@ public class MDPLib
                                     "# Example Azure SQL DB\n" +
                                     "MYASDB.server=mdb-sql.database.windows.net\n" +
                                     "MYASDB.db=MY_DB\n");
-
-
-            if (!File.Exists(defaultMDPlocation))
-            {
-                // Create an empty MDP database if it does not exist
-                SQLiteConnection.CreateFile(defaultMDPlocation);
-                using (var connection = new SQLiteConnection("Data Source=" + defaultMDPlocation + ";Version=3;"))
-                {
-                    connection.Open();
-                    // Create the AUD_LOG table
-                    string createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOG (SRC_X TEXT, GROUP_C TEXT, LOG_X TEXT, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
-                    using (var command = new SQLiteCommand(createTableSql, connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOAD (SRC_X TEXT, TABLE_X TEXT, DEBUG_X TEXT, BEGIN_TS TIMESTAMP, END_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
-                    using (var command = new SQLiteCommand(createTableSql, connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_MISC_VALUE (VALUE_C TEXT PRIMARY KEY, VALUE_X TEXT, VALUE_NB NUMERIC, VALUE_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP, MODIFIED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
-                    using (var command = new SQLiteCommand(createTableSql, connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
         }
 
         return path;
+    }
+
+    private static string CreateDefaultMDPifNeeded()
+    {
+        if (!File.Exists(defaultMDPfile))
+        {
+            Log($"Creating default MDP: {defaultMDPfile}");
+
+            // Create an empty MDP database if it does not exist
+            SQLiteConnection.CreateFile(defaultMDPfile);
+            using (var connection = new SQLiteConnection("Data Source=" + defaultMDPfile + ";Version=3;"))
+            {
+                connection.Open();
+                // Create the AUD_LOG table
+                string createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOG (SRC_X TEXT, GROUP_C TEXT, LOG_X TEXT, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                using (var command = new SQLiteCommand(createTableSql, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_LOAD (SRC_X TEXT, TABLE_X TEXT, DEBUG_X TEXT, BEGIN_TS TIMESTAMP, END_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                using (var command = new SQLiteCommand(createTableSql, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                createTableSql = @"CREATE TABLE IF NOT EXISTS MDP_MISC_VALUE (VALUE_C TEXT PRIMARY KEY, VALUE_X TEXT, VALUE_NB NUMERIC, VALUE_TS TIMESTAMP, CREATED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP, MODIFIED_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+                using (var command = new SQLiteCommand(createTableSql, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+        
+        return defaultMDPfile;
     }
 
     public static string GetAppName()
@@ -282,7 +289,7 @@ public class MDPLib
     public static string GetSQLiteConnInfo(string connKey)
     {
         string propertiesFilePath = GetConnFile();
-        string file = null;
+        string? file = null;
 
         foreach (var line in File.ReadLines(propertiesFilePath))
         {
@@ -291,8 +298,15 @@ public class MDPLib
                 file = trimmed.Substring((connKey + ".file=").Length).Trim();
         }
 
+        if (connKey.Equals("MDP") && !File.Exists(file))
+        {
+            file = CreateDefaultMDPifNeeded();
+        }
+
         if (string.IsNullOrEmpty(file))
+        {
             throw new Exception("Missing connection information for " + connKey + " in " + propertiesFilePath);
+        }
 
         return file;
     }
