@@ -9,20 +9,22 @@ class MDPextractSQLite
 
     static int Main(string[] args)
     {
-        if (args.Length != 2)
+        if (args.Length != 3)
         {
-            MDPLib.Log("Usage: MDPextractSQLite <connKey> <queryFile>");
+            MDPLib.Log("Usage: MDPextractSQLite <connKey> <path-to-sql-files> <sql-files>");
             return 1;
         }
 
         string connKey = args[0];
-        string queryFile = args[1];
+        string sqlDir = args[1];
+        string[] sqlFiles = args[2].Split(",");
 
         MDPextractSQLite extractor = new MDPextractSQLite();
-        return extractor.Extract(queryFile, connKey);
+        bool success = extractor.Extract(sqlDir, sqlFiles, connKey);
+        return success ? 0 : 1;
     }
 
-    int Extract(string queryFile, string connKey)
+    bool Extract(string sqlDir, string[] sqlFiles, string connKey)
     {
         string dbFile = MDPLib.GetSQLiteConnInfo(connKey);
 
@@ -30,77 +32,82 @@ class MDPextractSQLite
         if (!File.Exists(dbFile))
         {
             MDPLib.Log($"Database file not found: {dbFile}", this.runGuid);
-            return 1;
-        }
-        if (!File.Exists(queryFile))
-        {
-            MDPLib.Log($"Query file not found: {queryFile}", this.runGuid);
-            return 1;
+            return false;
         }
 
-        MDPLib.Log($"Executing query from {queryFile} against {dbFile}", this.runGuid);
-
-        // Read and clean query file
-        string[] lines = File.ReadAllLines(queryFile);
-        var queryLines = lines
-            .Where(line => !string.IsNullOrWhiteSpace(line))
-            .Where(line =>
-                !line.TrimStart().StartsWith("--") &&
-                !line.TrimStart().StartsWith("#") &&
-                !line.TrimStart().StartsWith("//"))
-            .ToArray();
-
-        string query = string.Join(Environment.NewLine, queryLines);
-
-        if (string.IsNullOrWhiteSpace(query))
+        int successfullyProcessed = 0;
+        foreach (string sqlFile in sqlFiles)
         {
-            MDPLib.Log("Query file does not contain a valid SQL statement.", this.runGuid);
-            return 1;
-        }
-
-        // Prepare output CSV path
-        string csvFile = Path.Combine(
-            Path.GetDirectoryName(queryFile),
-            Path.GetFileNameWithoutExtension(queryFile) + ".csv"
-        );
-
-        try
-        {
+            string queryFile = Path.Combine(sqlDir, sqlFile);
+            // Prepare output CSV path
+            string csvFile = Path.Combine(
+                Path.GetDirectoryName(queryFile),
+                Path.GetFileNameWithoutExtension(queryFile) + ".csv"
+            );
             int records = 0;
-            using (var conn = new SQLiteConnection($"Data Source={dbFile};Version=3;"))
+            try
             {
-                conn.Open();
-                using (var cmd = new SQLiteCommand(query, conn))
-                using (var reader = cmd.ExecuteReader())
-                using (var writer = new StreamWriter(csvFile, false, Encoding.UTF8))
+                if (!File.Exists(queryFile))
                 {
-                    // Write header
-                    string[] columnNames = Enumerable.Range(0, reader.FieldCount)
-                        .Select(reader.GetName)
-                        .ToArray();
-                    writer.WriteLine(string.Join(",", columnNames.Select(MDPLib.EscapeCsvValue)));
+                    throw new Exception($"Query file not found: {queryFile}");
+                }
 
-                    // Write rows
-                    while (reader.Read())
+                string sql = MDPLib.GetSqlFromFile(queryFile);
+                if (string.IsNullOrWhiteSpace(sql))
+                {
+                    throw new Exception($"No SQL found in file: {queryFile}");
+                }
+
+                MDPLib.Log($"Executing query from {queryFile} against {dbFile}", this.runGuid);
+                using (var conn = new SQLiteConnection($"Data Source={dbFile};Version=3;"))
+                {
+                    conn.Open();
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    using (var reader = cmd.ExecuteReader())
+                    using (var writer = new StreamWriter(csvFile, false, Encoding.UTF8))
                     {
-                        string[] fields = new string[reader.FieldCount];
-                        for (int i = 0; i < reader.FieldCount; i++)
+                        // Write header
+                        string[] columnNames = Enumerable.Range(0, reader.FieldCount)
+                            .Select(reader.GetName)
+                            .ToArray();
+                        writer.WriteLine(string.Join(",", columnNames.Select(MDPLib.EscapeCsvValue)));
+
+                        // Write rows
+                        while (reader.Read())
                         {
-                            fields[i] = MDPLib.EscapeCsvValue(reader[i]?.ToString() ?? "");
+                            string[] fields = new string[reader.FieldCount];
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                fields[i] = MDPLib.EscapeCsvValue(reader[i]?.ToString() ?? "");
+                            }
+                            writer.WriteLine(string.Join(",", fields));
+                            records++;
                         }
-                        writer.WriteLine(string.Join(",", fields));
-                        records++;
                     }
                 }
-            }
 
-            MDPLib.Log("Wrote " + records + " lines of data to " + csvFile, this.runGuid, true, true);
-            return 0;
+                MDPLib.Log("Wrote " + records + " lines of data to " + csvFile, this.runGuid, true, true);
+                successfullyProcessed++;
+            }
+            catch (Exception ex)
+            {
+                if (File.Exists(csvFile))
+                {
+                    File.Delete(csvFile);
+                }
+                MDPLib.Log("ERROR executing on rec " + records + ". Extract file deleted: " + ex.Message, this.runGuid, true, true);
+            }
         }
-        catch (Exception ex)
+
+        MDPLib.Log("Processed " + successfullyProcessed + " of " + sqlFiles.Length + " file(s) successfully in: " + sqlDir, this.runGuid, true, true);
+
+        if (successfullyProcessed == sqlFiles.Length)
         {
-            MDPLib.Log("Error: " + ex.Message, this.runGuid);
-            return 1;
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 }

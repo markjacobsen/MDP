@@ -7,129 +7,140 @@ class MDPextractDB2
 {
     private readonly string runGuid = Guid.NewGuid().ToString();
 
-    static void Main(string[] args)
+    static int Main(string[] args)
     {
-        if (args.Length != 4)
+        if (args.Length != 5)
         {
-            MDPLib.Log("Usage: MDPextractDB2 <connKey> <path-to-sql-file> <username> <password>");
-            return;
+            MDPLib.Log("Usage: MDPextractDB2 <connKey> <path-to-sql-files> <sql-files> <username> <password>");
+            return 1;
         }
 
         string connKey = args[0];
-        string sqlFilePath = args[1];
-        string db2Username = args[2];
-        string db2Password = args[3];
+        string sqlDir = args[1];
+        string[] sqlFiles = args[2].Split(",");
+        string db2Username = args[3];
+        string db2Password = args[4];
 
         MDPextractDB2 app = new MDPextractDB2();
-        app.Export(sqlFilePath, connKey, db2Username, db2Password);
+        bool success = app.Extract(sqlDir, sqlFiles, connKey, db2Username, db2Password);
+        return success ? 0 : 1;
     }
 
-    void Export(string sqlFilePath, string connKey, string db2Username, string db2Password)
+    bool Extract(string sqlDir, string[] sqlFiles, string connKey, string db2Username, string db2Password)
     {
-        if (!File.Exists(sqlFilePath))
+        if (!Directory.Exists(sqlDir))
         {
-            MDPLib.Log($"File not found: {sqlFilePath}", this.runGuid);
-            return;
+            MDPLib.Log($"ERROR: Directory not found: {sqlDir}", this.runGuid);
+            return false;
         }
 
-        string logPath = Path.Combine(
-            Path.GetDirectoryName(sqlFilePath),
-            Path.GetFileNameWithoutExtension(sqlFilePath) + ".log"
-        );
-
-        MDPLib.Log("Reading file: " + sqlFilePath, this.runGuid);
-
-        // Read file and extract connection info and SQL
+        // Get connection info
         var (host, port, db) = MDPLib.GetDB2ConnInfo(connKey);
-
-        StringBuilder sqlBuilder = new StringBuilder();
-
-        foreach (var line in File.ReadLines(sqlFilePath))
-        {
-            if (!line.TrimStart().StartsWith("--"))
-                sqlBuilder.AppendLine(line);
-        }
 
         if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(port) || string.IsNullOrEmpty(db))
         {
             MDPLib.Log("Missing connection information.", this.runGuid);
-            return;
+            return false;
         }
 
-        string sql = sqlBuilder.ToString().Trim();
-        if (string.IsNullOrEmpty(sql))
-        {
-            MDPLib.Log("No SQL query found in the file.", this.runGuid);
-            return;
-        }
+        string connStr = $"Server={host}:{port};Database={db};UID={db2Username};PWD={db2Password};";
+        MDPLib.Log($"Connecting to {db} on {host}:{port}", this.runGuid);
 
-        string csvFilePath = Path.Combine(
-            Path.GetDirectoryName(sqlFilePath),
-            Path.GetFileNameWithoutExtension(sqlFilePath) + ".csv"
-        );
-
-        int records = 0;
-        try
+        int successfullyProcessed = 0;
+        foreach (string sqlFile in sqlFiles)
         {
-            string connStr = $"Server={host}:{port};Database={db};UID={db2Username};PWD={db2Password};";
-            MDPLib.Log($"Connecting to {db} on {host}:{port}", this.runGuid);
-            
-            using (var conn = new DB2Connection(connStr))
+            string queryFile = Path.Combine(sqlDir, sqlFile);
+            string csvFilePath = Path.Combine(
+                    Path.GetDirectoryName(queryFile),
+                    Path.GetFileNameWithoutExtension(queryFile) + ".csv"
+                );
+            string logPath = Path.Combine(
+                    Path.GetDirectoryName(queryFile),
+                    Path.GetFileNameWithoutExtension(queryFile) + ".log"
+                );
+            int records = 0;
+            try
             {
-                MDPLib.Log("Executing SQL: \n" + sql, this.runGuid);
-                conn.Open();
-                using (var cmd = new DB2Command(sql, conn))
+                if (!File.Exists(queryFile))
                 {
-                    cmd.CommandTimeout = 600; // 10minutes
-                    MDPLib.Log("Starting: "+DateTime.Now.ToString("HH:mm:ss"));
-                    using (var reader = cmd.ExecuteReader())
-                    //using (var writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))  // false overwrites the CSV file if it already exists
-                    using (var fileStream = new FileStream(csvFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 65536))
-                    using (var writer = new StreamWriter(fileStream, Encoding.UTF8, 65536))
+                    throw new Exception($"Query file not found: {queryFile}");
+                }
+
+                string sql = MDPLib.GetSqlFromFile(queryFile);
+                if (string.IsNullOrWhiteSpace(sql))
+                {
+                    throw new Exception($"No SQL found in file: {queryFile}");
+                }
+
+                using (var conn = new DB2Connection(connStr))
+                {
+                    MDPLib.Log("Executing SQL: \n" + sql, this.runGuid);
+                    conn.Open();
+                    using (var cmd = new DB2Command(sql, conn))
                     {
-                        // Write header
-                        MDPLib.Log("Writing header to: " + csvFilePath, this.runGuid);
-                        string[] columnNames = new string[reader.FieldCount];
-                        for (int i = 0; i < reader.FieldCount; i++)
-                            columnNames[i] = reader.GetName(i);
-                        writer.WriteLine(string.Join(",", Array.ConvertAll(columnNames, MDPLib.EscapeCsvValue)));
-
-                        // Write rows
-                        MDPLib.Log("Writing results to: " + csvFilePath, this.runGuid);
-                        string[] fields = new string[reader.FieldCount]; // Avoid repeated definition
-                        var sb = new StringBuilder(1024);
-                        while (reader.Read())
+                        cmd.CommandTimeout = 600; // 10minutes
+                        MDPLib.Log("Starting: " + DateTime.Now.ToString("HH:mm:ss"));
+                        using (var reader = cmd.ExecuteReader())
+                        //using (var writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))  // false overwrites the CSV file if it already exists
+                        using (var fileStream = new FileStream(csvFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 65536))
+                        using (var writer = new StreamWriter(fileStream, Encoding.UTF8, 65536))
                         {
-                            sb.Clear();
+                            // Write header
+                            MDPLib.Log("Writing header to: " + csvFilePath, this.runGuid);
+                            string[] columnNames = new string[reader.FieldCount];
                             for (int i = 0; i < reader.FieldCount; i++)
-                            {
-                                if (i > 0) sb.Append(',');
-                                object value = reader.GetValue(i);
-                                sb.Append(MDPLib.EscapeCsvValue(value?.ToString()));
-                            }
-                            writer.WriteLine(sb.ToString());
-                            records++;
+                                columnNames[i] = reader.GetName(i);
+                            writer.WriteLine(string.Join(",", Array.ConvertAll(columnNames, MDPLib.EscapeCsvValue)));
 
-                            if (records % 10000 == 0)
+                            // Write rows
+                            MDPLib.Log("Writing results to: " + csvFilePath, this.runGuid);
+                            string[] fields = new string[reader.FieldCount]; // Avoid repeated definition
+                            var sb = new StringBuilder(1024);
+                            while (reader.Read())
                             {
-                                writer.Flush();
-                                MDPLib.Log(records + " records " + DateTime.Now.ToString("HH:mm:ss"));
+                                sb.Clear();
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    if (i > 0) sb.Append(',');
+                                    object value = reader.GetValue(i);
+                                    sb.Append(MDPLib.EscapeCsvValue(value?.ToString()));
+                                }
+                                writer.WriteLine(sb.ToString());
+                                records++;
+
+                                if (records % 10000 == 0)
+                                {
+                                    writer.Flush();
+                                    MDPLib.Log(records + " records " + DateTime.Now.ToString("HH:mm:ss"));
+                                }
                             }
+                            writer.Flush();
                         }
-                        writer.Flush();
                     }
                 }
+
+                MDPLib.Log("Wrote " + records + " lines of data to " + csvFilePath, this.runGuid, true, true);
+                successfullyProcessed++;
             }
-            
-            MDPLib.Log("Wrote " + records + " lines of data to " + csvFilePath, this.runGuid, true, true);
-        }
-        catch (Exception ex)
-        {
-            if (File.Exists(csvFilePath))
+            catch (Exception ex)
             {
-                File.Delete(csvFilePath);
+                if (File.Exists(csvFilePath))
+                {
+                    File.Delete(csvFilePath);
+                }
+                MDPLib.Log("ERROR executing on rec " + records + ". Extract file deleted: " + ex.Message, this.runGuid, true, true);
             }
-            MDPLib.Log("ERROR executing on rec "+records+" and extract file deleted: "+ex.Message, this.runGuid, true, true);
+        }
+
+        MDPLib.Log("Processed " + successfullyProcessed + " of " + sqlFiles.Length + " file(s) successfully in: " + sqlDir, this.runGuid, true, true);
+
+        if (successfullyProcessed == sqlFiles.Length)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 }

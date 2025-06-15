@@ -54,81 +54,71 @@ class MDPextractAzureSqlDB
         int successfullyProcessed = 0;
         foreach (string sqlFile in sqlFiles)
         {
-            string sqlFilePath = Path.Combine(sqlDir, sqlFile);
-
+            string queryFile = Path.Combine(sqlDir, sqlFile);
             string logPath = Path.Combine(
-                Path.GetDirectoryName(sqlFilePath),
-                Path.GetFileNameWithoutExtension(sqlFilePath) + ".log"
+                Path.GetDirectoryName(queryFile),
+                Path.GetFileNameWithoutExtension(queryFile) + ".log"
+            );
+            string csvFilePath = Path.Combine(
+                Path.GetDirectoryName(queryFile),
+                Path.GetFileNameWithoutExtension(queryFile) + ".csv"
             );
 
-            MDPLib.Log("Reading file: " + sqlFilePath, this.runGuid);
-            StringBuilder sqlBuilder = new StringBuilder();
-
-            foreach (var line in File.ReadLines(sqlFilePath))
+            try
             {
-                if (!line.TrimStart().StartsWith("--"))
-                    sqlBuilder.AppendLine(line);
-            }
-
-            string sql = sqlBuilder.ToString().Trim();
-            if (!string.IsNullOrEmpty(sql))
-            {
-                string csvFilePath = Path.Combine(
-                    Path.GetDirectoryName(sqlFilePath),
-                    Path.GetFileNameWithoutExtension(sqlFilePath) + ".csv"
-                );
-
-                MDPLib.Log("Connecting to: " + connStr, this.runGuid);
-
-                try
+                if (!File.Exists(queryFile))
                 {
-                    int lines = 0;
-                    using (var conn = new SqlConnection(connStr))
-                    {
-                        MDPLib.Log("Executing SQL: \n" + sql, this.runGuid);
+                    throw new Exception($"Query file not found: {queryFile}");
+                }
 
-                        // Attach the token
-                        conn.AccessToken = token.Token;
-                        conn.Open();
-                        using (var cmd = new SqlCommand(sql, conn))
+                string sql = MDPLib.GetSqlFromFile(queryFile);
+                if (string.IsNullOrEmpty(sql))
+                {
+                    throw new Exception($"No SQL found in file: {queryFile}");
+                }
+
+                int lines = 0;
+                using (var conn = new SqlConnection(connStr))
+                {
+                    MDPLib.Log("Executing SQL: \n" + sql, this.runGuid);
+
+                    // Attach the token
+                    conn.AccessToken = token.Token;
+                    conn.Open();
+                    using (var cmd = new SqlCommand(sql, conn))
+                    {
+                        cmd.CommandTimeout = 600; // 10 minutes
+                        using (var reader = cmd.ExecuteReader())
+                        using (var writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
                         {
-                            cmd.CommandTimeout = 600; // 10 minutes
-                            using (var reader = cmd.ExecuteReader())
-                            using (var writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
+                            // Write header
+                            for (int i = 0; i < reader.FieldCount; i++)
                             {
-                                // Write header
+                                if (i > 0) writer.Write(",");
+                                writer.Write(reader.GetName(i));
+                            }
+                            writer.WriteLine();
+
+                            // Write rows
+                            while (reader.Read())
+                            {
                                 for (int i = 0; i < reader.FieldCount; i++)
                                 {
                                     if (i > 0) writer.Write(",");
-                                    writer.Write(reader.GetName(i));
+                                    writer.Write(reader[i]?.ToString().Replace("\"", "\"\""));
                                 }
                                 writer.WriteLine();
-
-                                // Write rows
-                                while (reader.Read())
-                                {
-                                    for (int i = 0; i < reader.FieldCount; i++)
-                                    {
-                                        if (i > 0) writer.Write(",");
-                                        writer.Write(reader[i]?.ToString().Replace("\"", "\"\""));
-                                    }
-                                    writer.WriteLine();
-                                    lines++;
-                                }
+                                lines++;
                             }
                         }
                     }
-                    MDPLib.Log($"Query complete. {lines} rows written to {csvFilePath}", this.runGuid);
-                    successfullyProcessed++;
                 }
-                catch (Exception ex)
-                {
-                    MDPLib.Log("ERROR: " + ex.Message, this.runGuid);
-                }
+                MDPLib.Log($"Query complete. {lines} rows written to {csvFilePath}", this.runGuid);
+                successfullyProcessed++;
             }
-            else
+            catch (Exception ex)
             {
-                MDPLib.Log("WARN: No SQL query found in: " + sqlFilePath, this.runGuid);
+                MDPLib.Log("ERROR: " + ex.Message, this.runGuid);
             }
         }
 

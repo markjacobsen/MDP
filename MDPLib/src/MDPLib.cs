@@ -147,6 +147,21 @@ public class MDPLib
         }
     }
 
+    public static string GetSqlFromFile(string fullFilePath)
+    {
+        Log($"Reading SQL from {fullFilePath}");
+        string[] lines = File.ReadAllLines(fullFilePath);
+        var queryLines = lines
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Where(line =>
+                !line.TrimStart().StartsWith("--") &&
+                !line.TrimStart().StartsWith("#") &&
+                !line.TrimStart().StartsWith("//"))
+            .ToArray();
+
+        return string.Join(Environment.NewLine, queryLines);
+    }
+
     public static string EscapeCsvValue(string s)
     {
         if (string.IsNullOrEmpty(s))
