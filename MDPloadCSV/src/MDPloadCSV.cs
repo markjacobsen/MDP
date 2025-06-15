@@ -127,7 +127,7 @@ class MDPloadCSV
 
             end = DateTime.Now;
             sw.Stop();
-            loadResult = $"Wrote {rowCount} lines to {tableName} in {sw.Elapsed.Minutes} min {sw.Elapsed.Seconds} seconds from {csvFile}";
+            loadResult = $"Loaded {rowCount} records into {tableName} in {sw.Elapsed.Minutes} min {sw.Elapsed.Seconds} seconds from {csvFile}";
 
             // Rename input file to .done
             string doneFile = csvFile + ".done";
@@ -147,7 +147,7 @@ class MDPloadCSV
             }
             catch { /* ignore */ }
 
-            loadResult = $"ERROR writing data: {ex.Message}. Table has been dropped. {sw.Elapsed.Minutes} min {sw.Elapsed.Seconds} seconds";
+            loadResult = $"ERROR loading data from {fileName}: {ex.Message}. Table has been dropped. {sw.Elapsed.Minutes} min {sw.Elapsed.Seconds} seconds";
 
             // Rename input file to .err
             string errFile = csvFile + ".err";
