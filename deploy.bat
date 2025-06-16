@@ -1,5 +1,5 @@
-set CODE_BASE="%~dp0"
-set TARGET="%SYNC_DRIVE_HOME%\Apps\CFG2\MDP"
+set CODE_BASE=%~dp0
+set TARGET=%SYNC_DRIVE_HOME%\Apps\CFG2\MDP
 
 xcopy "%CODE_BASE%MDPextractAzureSqlDB\bin\Debug\net9.0\" "%TARGET%\MDPextractAzureSqlDB\" /Y
 xcopy "%CODE_BASE%MDPextractDataverse\bin\Debug\net9.0\" "%TARGET%\MDPextractDataverse\" /Y
