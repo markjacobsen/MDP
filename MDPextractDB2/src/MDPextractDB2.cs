@@ -1,5 +1,6 @@
 ﻿namespace CFG2.MDP;
 
+using System.Data.SQLite;
 using System.Text;
 using IBM.Data.Db2;
 
@@ -9,18 +10,23 @@ class MDPextractDB2
 
     static int Main(string[] args)
     {
-        if (args.Length != 5)
+        if (args.Length != 3)
         {
-            MDPLib.Log("Usage: MDPextractDB2 <connKey> <path-to-sql-files> <sql-files> <username> <password>");
+            MDPLib.Log("Usage: MDPextractDB2 <connKey> <path-to-sql-files> <sql-files>");
             return 1;
         }
 
         string connKey = args[0];
         string sqlDir = args[1];
         string[] sqlFiles = args[2].Split(",");
-        string db2Username = args[3];
-        string db2Password = args[4];
+        string db2Username = SecLib.Retrieve(connKey+".user");
+        string db2Password = SecLib.Retrieve(connKey+".pass");
 
+        if (string.IsNullOrEmpty(db2Username) || string.IsNullOrEmpty(db2Password))
+        {
+            MDPLib.Log($"Empty username or password for connection key: {connKey}");
+            return 1;
+        }
         MDPextractDB2 app = new MDPextractDB2();
         bool success = app.Extract(sqlDir, sqlFiles, connKey, db2Username, db2Password);
         return success ? 0 : 1;

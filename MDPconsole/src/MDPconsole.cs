@@ -8,21 +8,25 @@ class MDPconsole
         while (!menuChoice.Equals("Q", StringComparison.CurrentCultureIgnoreCase))
         {
             menuChoice = Menu();
-            if (menuChoice.Equals("T", StringComparison.CurrentCultureIgnoreCase))
+            if (menuChoice.Equals("Q", StringComparison.CurrentCultureIgnoreCase))
             {
-                Test();
+                Console.WriteLine("Quitting");
             }
             else if (menuChoice.Equals("S", StringComparison.CurrentCultureIgnoreCase))
             {
                 StoreSecret();
             }
+            else if (menuChoice.Equals("L", StringComparison.CurrentCultureIgnoreCase))
+            {
+                ListKeys();
+            }
             else if (menuChoice.Equals("C", StringComparison.CurrentCultureIgnoreCase))
             {
                 ConfigureDbConn();
             }
-            else if (menuChoice.Equals("Q", StringComparison.CurrentCultureIgnoreCase))
+            else if (menuChoice.Equals("T", StringComparison.CurrentCultureIgnoreCase))
             {
-                Console.WriteLine("Quitting");
+                Test();
             }
             else
             {
@@ -38,11 +42,27 @@ class MDPconsole
         Console.WriteLine("MDP Console - Please make a selection");
         Console.WriteLine("=====================================");
         Console.WriteLine("C. Configure DB Connection");
+        Console.WriteLine("L. List DB Connection Keys");
         Console.WriteLine("S. Store Secret");
-        Console.WriteLine("T. Test");
+        //Console.WriteLine("T. Test");
         Console.WriteLine("Q. Quit");
 
         return Console.ReadLine();
+    }
+
+    private static void ListKeys()
+    {
+        List<string> keys = MDPConfig.GetKeys();
+        foreach (string key in keys)
+        {
+            Console.WriteLine(key);
+        }
+    }
+
+    private static void UpdatePassword()
+    {
+        Console.WriteLine("Key:");
+        string key = Console.ReadLine();
     }
 
     private static void ConfigureDbConn()

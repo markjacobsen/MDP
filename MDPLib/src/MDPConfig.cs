@@ -67,4 +67,38 @@ public class MDPConfig
                                 key + ".server=" + server + "\n\n";
         File.AppendAllText(configFile, unencryptedData);
     }
+
+    public static List<string> GetKeys()
+    {
+        string filePath = MDPLib.GetConnFile();
+
+        // Use a HashSet for efficient storage and automatic handling of uniqueness.
+        HashSet<string> uniqueKeys = new HashSet<string>();
+
+        try
+        {
+            // Read all lines from the file. File.ReadLines is more memory-efficient for large files
+            // as it reads line by line, rather than loading the entire file into memory.
+            foreach (string line in File.ReadLines(filePath))
+            {
+                // Check if the line matches the "KEY.name=value" format.
+                // It must contain a '.' and an '='.
+                int dotIndex = line.IndexOf('.');
+                int equalsIndex = line.IndexOf('=');
+
+                if (dotIndex > 0 && equalsIndex > dotIndex)
+                {
+                    // Extract the part before the first '.' as the KEY.
+                    string key = line.Substring(0, dotIndex);
+                    uniqueKeys.Add(key);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MDPLib.Log($"ERROR: {ex.Message}");
+        }
+
+        return uniqueKeys.ToList();
+    }
 }
