@@ -50,7 +50,17 @@ class MDPconsole
         Console.WriteLine("Key:");
         string key = Console.ReadLine();
 
-        if (MDPConfig.KeyExists(key))
+        if (string.IsNullOrEmpty(key))
+        {
+            Console.WriteLine("Key is empty");
+            return;
+        }
+        else if (key.Equals("MDP", StringComparison.CurrentCultureIgnoreCase))
+        {
+            Console.WriteLine("Not allowed to overwrite MDP key");
+            return;
+        }
+        else if (MDPConfig.KeyExists(key))
         {
             Console.WriteLine($"Configuration already exists for {key}. Would you like to continue and overwrite the settings? [Y/N]");
             string opt = Console.ReadLine();
@@ -67,9 +77,9 @@ class MDPconsole
         Console.WriteLine("DB Type");
         Console.WriteLine("---------------");
         Console.WriteLine("1. DB2");
-        //Console.WriteLine("2. Azure SQL DB");
-        //Console.WriteLine("3. SQLite");
-        //Console.WriteLine("4. Dataverse");
+        Console.WriteLine("2. Azure SQL DB");
+        Console.WriteLine("3. SQLite");
+        Console.WriteLine("4. Dataverse");
 
         string menuChoice = Console.ReadLine();
         if (menuChoice.Equals("1"))
@@ -96,6 +106,51 @@ class MDPconsole
             else
             {
                 MDPConfig.StoreDb2(key, host, port, db, user, pass);
+            }
+        }
+        else if (menuChoice.Equals("2"))
+        {
+            Console.WriteLine("Server (ex: mdb-sql.database.windows.net):");
+            string server = Console.ReadLine();
+
+            Console.WriteLine("DB:");
+            string db = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(server) || string.IsNullOrEmpty(db))
+            {
+                Console.WriteLine("Error. Invalid configuration info");
+            }
+            else
+            {
+                MDPConfig.StoreAzureSqlDB(key, server, db);
+            }
+        }
+        else if (menuChoice.Equals("3"))
+        {
+            Console.WriteLine("File (full path):");
+            string file = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(file) || !File.Exists(file))
+            {
+                Console.WriteLine("Error. Invalid configuration info, or DB does not exist");
+            }
+            else
+            {
+                MDPConfig.StoreSQLite(key, file);
+            }
+        }
+        else if (menuChoice.Equals("4"))
+        {
+            Console.WriteLine("Server (ex: our-d365-dev.crm.dynamics.com):");
+            string server = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(server))
+            {
+                Console.WriteLine("Error. Invalid configuration info");
+            }
+            else
+            {
+                MDPConfig.StoreDataverse(key, server);
             }
         }
         else

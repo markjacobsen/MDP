@@ -36,11 +36,35 @@ public class MDPConfig
 
     public static void StoreDb2(string key, string host, string port, string db, string username, string password)
     {
-        string unencryptedData = key + ".host=" + host + "\n" +
-                                 key + ".port=" + port + "\n" +
-                                 key + ".db=" + db + "\n";
+        string unencryptedData = "# DB2\n" +
+                                key + ".host=" + host + "\n" +
+                                key + ".port=" + port + "\n" +
+                                key + ".db=" + db + "\n";
         File.AppendAllText(configFile, unencryptedData);
         SecLib.Store(key + ".user", username);
         SecLib.Store(key + ".pass", password);
+        File.AppendAllText(configFile, "\n");
+    }
+
+    public static void StoreAzureSqlDB(string key, string server, string db)
+    {
+        string unencryptedData = "# Azure SQL DB\n" +
+                                key + ".server=" + server + "\n" +
+                                key + ".db=" + db + "\n\n";
+        File.AppendAllText(configFile, unencryptedData);
+    }
+
+    public static void StoreSQLite(string key, string file)
+    {
+        string unencryptedData = "# SQLite\n" +
+                                key + ".file=" + file + "\n\n";
+        File.AppendAllText(configFile, unencryptedData);
+    }
+
+    public static void StoreDataverse(string key, string server)
+    {
+        string unencryptedData = "# Dataverse\n" +
+                                key + ".server=" + server + "\n\n";
+        File.AppendAllText(configFile, unencryptedData);
     }
 }
