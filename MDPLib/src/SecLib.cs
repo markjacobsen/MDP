@@ -6,102 +6,148 @@ namespace CFG2.MDP;
 public class SecLib
 {
     // Optional entropy for additional security. Should be the same for both encryption and decryption.
-    private static readonly byte[] s_entropy = Encoding.UTF8.GetBytes("This!$someS3riouSenTropica+i0n");
+    private static readonly byte[] entropy = Encoding.UTF8.GetBytes("This!$someS3riouSenTropica+i0n");
 
     public static bool Store(string key, string value)
     {
-        bool success = false;
-        string curVal = GetValue(key);
+        if (string.IsNullOrEmpty(key))
+        {
+            throw new Exception("Key cannot be null or empty.");
+        }
+        if (string.IsNullOrEmpty(value))
+        {
+            throw new Exception("Value cannot be null or empty.");
+        }
 
-        return success;
+        string filePath = MDPLib.GetConnFile();if (!File.Exists(filePath))
+        {
+            throw new Exception($"Configuration file not found: {filePath}");
+        }
+
+        string encryptedValue = Encrypt(value);
+        string lineToWrite = $"{key}={encryptedValue}";
+
+        try
+        {
+            string[] lines = File.ReadAllLines(filePath);
+            bool keyFound = false;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].StartsWith($"{key}="))
+                {
+                    lines[i] = lineToWrite;
+                    keyFound = true;
+                    break;
+                }
+            }
+
+            if (!keyFound)
+            {
+                File.AppendAllText(filePath, lineToWrite + Environment.NewLine);
+            }
+            else
+            {
+                File.WriteAllLines(filePath, lines);
+            }
+            return true;
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"Error storing data: {ex.Message}");
+            return false;
+        }
+        catch (InvalidOperationException) // Propagated from Encrypt
+        {
+            return false;
+        }
     }
+
 
     public static string Retrieve(string key)
     {
-        return Decrypt(Encoding.UTF8.GetBytes(GetValue(key)));
-    }
-
-    private static string GetValue(string key)
-    {
-        string propertiesFilePath = MDPLib.GetConnFile();
-        string val = null;
-
-        foreach (var line in File.ReadLines(propertiesFilePath))
+        if (string.IsNullOrEmpty(key))
         {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith(key + "="))
-                val = trimmed.Substring((key + "=").Length).Trim();
+            throw new Exception("key cannot be null or empty");
         }
 
-        if (string.IsNullOrEmpty(val))
-            throw new Exception($"Missing key \"{key}\" in db.properties.");
-
-        return val;
-    }
-
-    /// <summary>
-    /// Protects a value using DPAPI with User scope.
-    /// </summary>
-    /// <param name="plainTextValue">The string to encrypt.</param>
-    /// <returns>A byte array representing the encrypted value, or null if protection fails.</returns>
-    private static byte[] Encrypt(string plainTextValue)
-    {
-        if (string.IsNullOrEmpty(plainTextValue))
+        string filePath = MDPLib.GetConnFile();
+        if (!File.Exists(filePath))
         {
-            throw new ArgumentNullException(nameof(plainTextValue), "Password cannot be null or empty.");
+            throw new Exception($"Configuration file not found: {filePath}");
         }
 
         try
         {
-            byte[] plainBytes = Encoding.UTF8.GetBytes(plainTextValue);
-
-            // Encrypt the data using DPAPI.
-            // DataProtectionScope.CurrentUser ensures that only the current user can decrypt it.
-            // s_entropy is optional but highly recommended for an extra layer of security.
-            byte[] protectedBytes = ProtectedData.Protect(
-                plainBytes,
-                s_entropy, // Use the same entropy as for decryption
-                DataProtectionScope.CurrentUser);
-
-            return protectedBytes;
+            foreach (string line in File.ReadLines(filePath))
+            {
+                if (line.StartsWith($"{key}="))
+                {
+                    string encryptedValue = line.Substring(key.Length + 1);
+                    return Decrypt(encryptedValue);
+                }
+            }
         }
-        catch (CryptographicException ex)
+        catch (IOException ex)
         {
-            Console.WriteLine($"Error protecting password: {ex.Message}");
-            return null;
+            Console.WriteLine($"Error retrieving data: {ex.Message}");
         }
+        catch (InvalidOperationException) // Propagated from Decrypt
+        {
+            // Decryption failed, likely due to corrupted data or wrong user/machine
+        }
+        catch (ArgumentException) // Propagated from Decrypt (invalid Base64)
+        {
+            // Input was not valid Base64
+        }
+        return null; // Key not found or an error occurred
     }
 
-    /// <summary>
-    /// Decrypts a value previously protected with DPAPI.
-    /// </summary>
-    /// <param name="protectedBytes">The byte array representing the protected password.</param>
-    /// <returns>The original plain text value, or null if retrieval fails.</returns>
-    private static string Decrypt(byte[] protectedBytes)
+    private static string Encrypt(string decryptedValue)
     {
-        if (protectedBytes == null || protectedBytes.Length == 0)
+        if (string.IsNullOrEmpty(decryptedValue))
         {
-            throw new ArgumentNullException(nameof(protectedBytes), "Protected data cannot be null or empty.");
+            throw new ArgumentNullException(nameof(decryptedValue), "Password cannot be null or empty.");
         }
 
         try
         {
-            // Decrypt the data using DPAPI.
-            // You must use the same scope (CurrentUser) and entropy used during encryption.
-            byte[] plainBytes = ProtectedData.Unprotect(
-                protectedBytes,
-                s_entropy, // Use the same entropy as for encryption
-                DataProtectionScope.CurrentUser);
-
-            return Encoding.UTF8.GetString(plainBytes);
+            byte[] decryptedBytes = Encoding.UTF8.GetBytes(decryptedValue);
+            byte[] encryptedBytes = ProtectedData.Protect(decryptedBytes, entropy, DataProtectionScope.CurrentUser);
+            return Convert.ToBase64String(encryptedBytes);
         }
         catch (CryptographicException ex)
         {
-            Console.WriteLine($"Error decrypting: {ex.Message}");
-            Console.WriteLine("This can happen if:");
-            Console.WriteLine("  - You are trying to decrypt data encrypted by a different user.");
-            Console.WriteLine("  - The entropy string used for decryption does not match the one used for encryption.");
-            return null;
+            // Log the exception (e.g., using a logging framework)
+            Console.WriteLine($"Encryption error: {ex.Message}");
+            throw new InvalidOperationException("Failed to encrypt data.", ex);
+        }
+    }
+
+    private static string Decrypt(string encryptedValue)
+    {
+        if (string.IsNullOrEmpty(encryptedValue))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            byte[] encryptedBytes = Convert.FromBase64String(encryptedValue);
+            byte[] decryptedBytes = ProtectedData.Unprotect(encryptedBytes, entropy, DataProtectionScope.CurrentUser);
+            return Encoding.UTF8.GetString(decryptedBytes);
+        }
+        catch (CryptographicException ex)
+        {
+            // Log the exception
+            Console.WriteLine($"Decryption error: {ex.Message}");
+            throw new InvalidOperationException("Failed to decrypt data. Data might be corrupted or encrypted by a different user/machine.", ex);
+        }
+        catch (FormatException ex)
+        {
+            // Log the exception if the input is not a valid Base64 string
+            Console.WriteLine($"Decryption error: Invalid Base64 string. {ex.Message}");
+            throw new ArgumentException("Input string is not a valid Base64 format.", ex);
         }
     }
 }
