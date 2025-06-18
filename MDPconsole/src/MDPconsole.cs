@@ -12,6 +12,10 @@ class MDPconsole
             {
                 Console.WriteLine("Quitting");
             }
+            else if (menuChoice.Equals("D", StringComparison.CurrentCultureIgnoreCase))
+            {
+                DisplayConfig();
+            }
             else if (menuChoice.Equals("S", StringComparison.CurrentCultureIgnoreCase))
             {
                 StoreSecret();
@@ -42,12 +46,21 @@ class MDPconsole
         Console.WriteLine("MDP Console - Please make a selection");
         Console.WriteLine("=====================================");
         Console.WriteLine("C. Configure DB Connection");
+        Console.WriteLine("D. Display DB Config");
         Console.WriteLine("L. List DB Connection Keys");
         Console.WriteLine("S. Store Secret");
         //Console.WriteLine("T. Test");
         Console.WriteLine("Q. Quit");
 
         return Console.ReadLine();
+    }
+
+    private static void DisplayConfig()
+    {
+        ListKeys();
+        Console.WriteLine("Key:");
+        string key = Console.ReadLine();
+        Console.WriteLine(MDPConfig.GetKeyDisplay(key));
     }
 
     private static void ListKeys()

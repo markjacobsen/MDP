@@ -101,4 +101,44 @@ public class MDPConfig
 
         return uniqueKeys.ToList();
     }
+
+    public static string GetKeyDisplay(string key)
+    {
+        string filePath = MDPLib.GetConnFile();
+        string ret = "";
+
+        try
+        {
+            foreach (string line in File.ReadLines(filePath))
+            {
+                // Check if the line matches the "KEY.name=value" format.
+                // It must contain a '.' and an '='.
+                int dotIndex = line.IndexOf('.');
+                int equalsIndex = line.IndexOf('=');
+
+                if (dotIndex > 0 && (equalsIndex > dotIndex) && line.StartsWith(key))
+                {
+                    if (line.StartsWith(key + ".user="))
+                    {
+                        string val = SecLib.Retrieve(line.Split("=")[0]);
+                        ret += key + ".user=" + val + "\n";
+                    }
+                    else if (line.StartsWith(key + ".pass="))
+                    {
+                        ret += key + ".pass=<hidden>\n";
+                    }
+                    else
+                    {
+                        ret += line + "\n";
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MDPLib.Log($"ERROR: {ex.Message}");
+        }
+
+        return ret;
+    }
 }
