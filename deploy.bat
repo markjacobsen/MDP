@@ -7,3 +7,4 @@ xcopy "%CODE_BASE%MDPextractDB2\bin\Debug\net9.0\" "%TARGET%\MDPextractDB2\" /Y 
 xcopy "%CODE_BASE%MDPextractSQLite\bin\Debug\net9.0\" "%TARGET%\MDPextractSQLite\" /Y /E
 xcopy "%CODE_BASE%MDPloadCSV\bin\Debug\net9.0\" "%TARGET%\MDPloadCSV\" /Y /E
 xcopy "%CODE_BASE%MDPloadLog\bin\Debug\net9.0\" "%TARGET%\MDPloadLog\" /Y /E
+xcopy "%CODE_BASE%MDPconsole\bin\Debug\net9.0\" "%TARGET%\MDPconsole\" /Y /E

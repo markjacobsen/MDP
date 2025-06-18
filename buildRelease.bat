@@ -21,3 +21,7 @@ CALL .\build.bat
 cd %~dp0
 cd MDPloadLog
 CALL .\build.bat
+
+cd %~dp0
+cd MDPconsole
+CALL .\build.bat
