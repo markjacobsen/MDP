@@ -8,7 +8,7 @@ public class MDPLib
 {
     private static readonly string defaultMDPfile = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), "MDP.db");
 
-    private static string GetConnFile()
+    internal static string GetConnFile()
     {
         string path = Path.Combine(Environment.GetEnvironmentVariable("SYNC_DRIVE_HOME"), @"Apps\CFG2\MDP\db.properties");
         if (!File.Exists(path))
